@@ -1,0 +1,293 @@
+
+
+<!--  server/report_template.html -->  
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Activity Report</title>
+
+<link rel="stylesheet" href="file:///{{cssPath}}">
+</head>
+
+<body>
+
+<!-- ====================== PAGE 1 : COVER PAGE ====================== -->
+<pre>
+
+
+
+
+</pre>
+
+<h1 class="dept-title">
+  Department of Computer Science & Engineering
+</h1>
+
+<h2 class="report-title">
+  {{reportTitle}}
+</h2>
+
+<table class="details-table">
+  <tr><th>Activity Name:</th><td>{{activityName}}</td></tr>
+  <tr><th>Co-ordinator:</th><td>{{coordinator}}</td></tr>
+  <tr><th>Date:</th><td>{{date}}</td></tr>
+  <tr><th>Duration:</th><td>{{duration}}</td></tr>
+  <tr><th>PO & POs:</th><td>{{poPos}}</td></tr>
+</table>
+
+<div class="first-page-footer">
+    <div class="academic-year">ACADEMIC YEAR {{academicYear}}</div>
+    <div class="address">
+        ATRIA INSTITUTE OF TECHNOLOGY,<br>
+        Adjacent Bangalore Baptist Hospital, Hebbal,<br>
+        Bengaluru - 560 024
+    </div>
+</div>
+
+<!-- PAGE BREAK -->
+<div class="page-break"></div>
+
+
+<!-- ====================== PAGE 2 : TABLE OF CONTENTS ====================== -->
+
+<pre>
+
+
+  
+
+</pre>
+
+<h2 class="toc-heading">TABLE OF CONTENTS</h2>
+
+<table class="toc-table">
+    <thead>
+        <tr>
+            <th>Sl. No</th>
+            <th>CONTENT</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="toc-row"><td class="slno">1.</td><td class="section-name">Invitation</td></tr>
+        <tr><td class="slno">2.</td><td class="section-name">Poster</td></tr>
+        <tr class="toc-row"><td class="slno">3.</td><td class="section-name">Resource Person Details</td></tr>
+        <tr><td class="slno">4.</td><td class="section-name">Session Report</td></tr>
+        <tr class="toc-row"><td class="slno">5.</td><td class="section-name">Attendance</td></tr>
+        <tr><td class="slno">6.</td><td class="section-name">Photos</td></tr>
+        <tr class="toc-row"><td class="slno">7.</td><td class="section-name">Feedback</td></tr>
+    </tbody>
+</table>
+
+<!-- PAGE BREAK -->
+<div class="page-break"></div>
+
+
+<!-- ====================== PAGE 3 : INVITATION ====================== -->
+
+<pre>
+
+
+  
+</pre>
+
+<section class="invitation-section">
+  <h2 class="section-title invitation-title">INVITATION</h2>
+
+  <div class="image-wrapper invitation-image-wrapper">
+      <img src="{{invitationImage}}" alt="Invitation" />
+  </div>
+</section>
+
+<div class="page-break"></div>
+
+
+<!-- ====================== PAGE 4 : POSTER ====================== -->
+
+<pre>
+
+
+  
+
+</pre>
+
+<section class="poster-section">
+  <h2 class="section-title poster-title">POSTER</h2>
+
+  <div class="image-wrapper poster-image-wrapper">
+      <img src="{{posterImage}}" alt="Poster" />
+  </div>
+</section>
+
+<div class="page-break"></div>
+
+
+
+<!-- ====================== PAGE 5 : RESOURCE PERSON DETAILS ====================== -->
+
+<pre>
+
+
+  
+
+</pre>
+
+<section class="resource-section">
+  <h2 class="section-title resource-title">RESOURCE PERSON DETAILS</h2>
+
+  <div class="resource-photo-wrapper">
+    <img src="{{resourcePhoto}}" alt="Resource Person" />
+  </div>
+
+  <div class="resource-details">
+    <p><strong>{{resourceName}}</strong>, {{resourceDesignation}}</p>
+    <p><em>{{resourceInstitution}}</em></p>
+
+  </div>
+</section>
+
+<div class="page-break"></div>
+
+
+<!-- ====================== PAGE 6 : SESSION REPORT ====================== -->
+
+<pre>
+
+
+
+
+</pre>
+
+<h2 class="section-title">SESSION REPORT</h2>
+
+<table class="session-table">
+  <thead>
+    <tr>
+      <th class="session-header" colspan="4">SESSION REPORT</th>
+    </tr>
+  </thead>
+
+  <tbody>
+
+    <!-- Session Name -->
+    <tr>
+      <td class="session-label">Session Name</td>
+      <td class="session-value" colspan="3">{{sessionName}}</td>
+    </tr>
+
+    <!-- Resource person + coordinators -->
+    <tr>
+      <td class="session-label">Resource Person</td>
+      <td class="session-value">{{resourceName}}</td>
+
+      <td class="session-label">Co-ordinator(s)</td>
+      <td class="session-value">{{coordinators}}</td>
+    </tr>
+
+    <!-- Date + link -->
+    <tr>
+      <td class="session-label">Date</td>
+      <td class="session-value">{{date_display}}</td>
+
+      <td class="session-label">Google Meet Link</td>
+      <td class="session-value">
+        {{googleMeetLink}}
+      </td>
+    </tr>
+
+    <!-- Intended participants -->
+    <tr>
+      <td class="session-label">Intended Participants</td>
+      <td class="session-value" colspan="3">{{intendedParticipants}}</td>
+    </tr>
+
+    <!-- Attendance numbers -->
+    <tr>
+      <td class="session-label">No. of Students Present</td>
+      <td class="session-value">{{participants}}</td>
+
+      <td class="session-label">No. of Faculty Present</td>
+      <td class="session-value">{{facultyCount}}</td>
+    </tr>
+
+    <!-- Category -->
+    <tr>
+      <td class="session-label">Category of Event</td>
+      <td class="session-value" colspan="3">{{categoryOfEvent}}</td>
+    </tr>
+
+
+    <!-- Summary Heading Row -->
+<tr>
+  <td colspan="4" class="summary-heading">
+    Summary<br />
+    (Provide in detail report of session progress)
+  </td>
+</tr>
+
+<!-- Summary Content Row -->
+<tr>
+  <td colspan="4" class="summary-box">
+    {{sessionSummary}}
+  </td>
+</tr>
+
+
+  </tbody>
+</table>
+
+
+
+
+
+<div class="page-break"></div>
+
+<!-- ====================== PAGE :7  ATTENDANCE ====================== -->
+
+<pre>
+
+
+
+</pre>
+
+<h2 class="section-title">ATTENDANCE</h2>
+
+<!-- Multiple attendance pages injected from backend -->
+{{attendancePages}}
+
+
+<div class="page-break"></div>
+
+
+
+<!-- ====================== PAGE 8 : PHOTOS ====================== -->
+
+<pre>
+
+
+  
+
+</pre>
+
+<h2 class="section-title">PHOTOS</h2>
+
+{{photoPages}}
+
+
+<div class="page-break"></div>
+
+
+<!-- ====================== PAGE 9 : FEEDBACK ====================== -->
+
+<pre>
+
+
+  
+
+</pre>
+<h2 class="section-title">FEEDBACK</h2>
+{{feedbackPages}}
+
+</body>
+</html> 
