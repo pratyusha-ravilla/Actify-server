@@ -27,6 +27,7 @@ jobs:
         run: |
           cd server
           npm install
+          export PUPPETEER_SKIP_DOWNLOAD=true
           npm run build --if-present
           npm run test --if-present
 
