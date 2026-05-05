@@ -4,9 +4,11 @@
 import fs from "fs";
 import path from "path";
 import Activity from "../models/Activity.js";
-// import puppeteer from "puppeteer";
 
-import PDFDocument from "pdfkit";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
+
+
 
 
 
@@ -186,200 +188,203 @@ console.log("FEEDBACK FILES:", req.files?.feedbackImages);
 // ============================
 // GENERATE PDF
 // ============================
-// export const getPdf = async (req, res) => {
-//   try {
-//     const a = await Activity.findById(req.params.id).lean();
-//     if (!a) return res.status(404).json({ message: "Not found" });
+export const getPdf = async (req, res) => {
+  try {
+    const a = await Activity.findById(req.params.id).lean();
+    if (!a) return res.status(404).json({ message: "Not found" });
 
-//     // debug: show which files controller sees
-//     console.log(
-//       "Generating PDF for activity:",
-//       a._id,
-//       "invitation:",
-//       a.invitation,
-//       "poster:",
-//       a.poster,
-//       "resourcePhoto:",
-//       a.resourcePerson?.photo,
-//       "attendanceFile:",
-//       a.attendanceFile,
-//       "attendanceImages:",
-//       a.attendanceImages || null
-//     );
+    // debug: show which files controller sees
+    console.log(
+      "Generating PDF for activity:",
+      a._id,
+      "invitation:",
+      a.invitation,
+      "poster:",
+      a.poster,
+      "resourcePhoto:",
+      a.resourcePerson?.photo,
+      "attendanceFile:",
+      a.attendanceFile,
+      "attendanceImages:",
+      a.attendanceImages || null
+    );
 
-//     let html = loadTemplate();
+    let html = loadTemplate();
 
-//     // Insert CSS path (puppeteer addStyleTag uses CSS_PATH)
-//     html = html.replace(/{{cssPath}}/g, CSS_PATH.replace(/\\/g, "/"));
+    // Insert CSS path (puppeteer addStyleTag uses CSS_PATH)
+    html = html.replace(/{{cssPath}}/g, CSS_PATH.replace(/\\/g, "/"));
 
-//     // Insert header image (inline base64)
-//     html = html.replace(/{{headerImage}}/g, toBase64(HEADER_PATH));
+    // Insert header image (inline base64)
+    html = html.replace(/{{headerImage}}/g, toBase64(HEADER_PATH));
 
-//     // Titles map
-//     const titleMap = {
-//       conducted: "ACTIVITY CONDUCTED REPORT",
-//       attended: "ACTIVITY ATTENDED REPORT",
-//       expert_talk: "ACTIVITY EXPERT TALK"
-//     };
+    // Titles map
+    const titleMap = {
+      conducted: "ACTIVITY CONDUCTED REPORT",
+      attended: "ACTIVITY ATTENDED REPORT",
+      expert_talk: "ACTIVITY EXPERT TALK"
+    };
 
-//     // Basic text replacements
-//     html = html.replace(/{{reportTitle}}/g, titleMap[a.reportType] || "");
-//     html = html.replace(/{{academicYear}}/g, a.academicYear || "");
-//     html = html.replace(/{{activityName}}/g, a.activityName || "");
-//     html = html.replace(/{{coordinator}}/g, a.coordinator || "");
-//     html = html.replace(/{{date}}/g, a.date || "");
-//     html = html.replace(/{{duration}}/g, a.duration || "");
-//     html = html.replace(/{{poPos}}/g, a.poPos || "");
+    // Basic text replacements
+    html = html.replace(/{{reportTitle}}/g, titleMap[a.reportType] || "");
+    html = html.replace(/{{academicYear}}/g, a.academicYear || "");
+    html = html.replace(/{{activityName}}/g, a.activityName || "");
+    html = html.replace(/{{coordinator}}/g, a.coordinator || "");
+    html = html.replace(/{{date}}/g, a.date || "");
+    html = html.replace(/{{duration}}/g, a.duration || "");
+    html = html.replace(/{{poPos}}/g, a.poPos || "");
 
-//     html = html.replace(/{{resourceName}}/g, a.resourcePerson?.name || "");
-//     html = html.replace(/{{resourceDesignation}}/g, a.resourcePerson?.designation || "");
-//     html = html.replace(/{{resourceInstitution}}/g, a.resourcePerson?.institution || "");
-//     html = html.replace(/{{resourcePhoto}}/g, toDataUrl(a.resourcePerson?.photo));
+    html = html.replace(/{{resourceName}}/g, a.resourcePerson?.name || "");
+    html = html.replace(/{{resourceDesignation}}/g, a.resourcePerson?.designation || "");
+    html = html.replace(/{{resourceInstitution}}/g, a.resourcePerson?.institution || "");
+    html = html.replace(/{{resourcePhoto}}/g, toDataUrl(a.resourcePerson?.photo));
 
-//     html = html.replace(/{{participants}}/g, (a.sessionReport?.participantsCount ?? a.sessionReport?.participants ?? "") + "");
-//     html = html.replace(/{{facultyCount}}/g, (a.sessionReport?.facultyCount ?? "") + "");
-//     html = html.replace(/{{feedback}}/g, a.feedback || "");
+    html = html.replace(/{{participants}}/g, (a.sessionReport?.participantsCount ?? a.sessionReport?.participants ?? "") + "");
+    html = html.replace(/{{facultyCount}}/g, (a.sessionReport?.facultyCount ?? "") + "");
+    html = html.replace(/{{feedback}}/g, a.feedback || "");
 
 
   
-//     // Invitation / poster images
+    // Invitation / poster images
     
-//     html = html.replace(/{{invitationImage}}/g, toDataUrl(a.invitation));
-//     html = html.replace(/{{posterImage}}/g, toDataUrl(a.poster));
+    html = html.replace(/{{invitationImage}}/g, toDataUrl(a.invitation));
+    html = html.replace(/{{posterImage}}/g, toDataUrl(a.poster));
 
-//   // ----------------------------
-// // PHOTOS PAGE (2 images per page - vertical)
-// // ----------------------------
-// let photoPagesHtml = "";
+  // ----------------------------
+// PHOTOS PAGE (2 images per page - vertical)
+// ----------------------------
+let photoPagesHtml = "";
 
-// const photosArr = Array.isArray(a.photos) ? a.photos : [];
+const photosArr = Array.isArray(a.photos) ? a.photos : [];
 
-// for (let i = 0; i < photosArr.length; i += 2) {
-//   const img1 = toDataUrl(photosArr[i]);
-//   const img2 = photosArr[i + 1] ? toDataUrl(photosArr[i + 1]) : "";
+for (let i = 0; i < photosArr.length; i += 2) {
+  const img1 = toDataUrl(photosArr[i]);
+  const img2 = photosArr[i + 1] ? toDataUrl(photosArr[i + 1]) : "";
 
 
-//   photoPagesHtml += `
-//     <div class="photo-page">
-//       <div class="photo-box">
-//         ${img1 ? `<img src="${img1}" />` : ""}
-//       </div>
+  photoPagesHtml += `
+    <div class="photo-page">
+      <div class="photo-box">
+        ${img1 ? `<img src="${img1}" />` : ""}
+      </div>
 
-//      ${img2 ? `
-// <div class="photo-box">
-//   <img src="${img2}" />
-// </div>
-// ` : ""}
-//     </div>
+     ${img2 ? `
+<div class="photo-box">
+  <img src="${img2}" />
+</div>
+` : ""}
+    </div>
     
-//   `;
-// }
+  `;
+}
 
-// html = html.replace(/{{photoPages}}/g, photoPagesHtml);
+html = html.replace(/{{photoPages}}/g, photoPagesHtml);
 
-// // =============================
-// // ATTENDANCE: ONE IMAGE PER PAGE
-// // =============================
-// let attendancePagesHtml = "";
+// =============================
+// ATTENDANCE: ONE IMAGE PER PAGE
+// =============================
+let attendancePagesHtml = "";
 
-// const attendanceImages = Array.isArray(a.attendanceImages)
-//   ? a.attendanceImages
-//   : [];
+const attendanceImages = Array.isArray(a.attendanceImages)
+  ? a.attendanceImages
+  : [];
 
-// attendanceImages.forEach((imgPath) => {
-//   const imgData = toDataUrl(imgPath);
-//   if (!imgData) return;
+attendanceImages.forEach((imgPath) => {
+  const imgData = toDataUrl(imgPath);
+  if (!imgData) return;
 
-//   attendancePagesHtml += `
-//     <div class="attendance-page">
-//       <div class="attendance-box">
-//         <img src="${imgData}" />
-//       </div>
-//     </div>
+  attendancePagesHtml += `
+    <div class="attendance-page">
+      <div class="attendance-box">
+        <img src="${imgData}" />
+      </div>
+    </div>
    
-//   `;
+  `;
+});
+
+html = html.replace(/{{attendancePages}}/g, attendancePagesHtml);
+
+
+// =============================
+// FEEDBACK PAGE (2 IMAGES PER PAGE)
+// =============================
+let feedbackPagesHtml = "";
+
+const feedbackArr = Array.isArray(a.feedbackImages) ? a.feedbackImages : [];
+
+for (let i = 0; i < feedbackArr.length; i += 2) {
+  const img1 = toDataUrl(feedbackArr[i]);
+  const img2 = feedbackArr[i + 1] ? toDataUrl(feedbackArr[i + 1]) : "";
+
+  feedbackPagesHtml += `
+    <div class="feedback-page">
+      <div class="feedback-box">
+        ${img1 ? `<img src="${img1}" />` : ""}
+      </div>
+
+      ${img2 ? `
+<div class="feedback-box">
+  <img src="${img2}" />
+</div>
+` : ""}
+    </div>
+  `;
+}
+
+html = html.replace(/{{feedbackPages}}/g, feedbackPagesHtml);
+
+  // ----------------------------
+    // NEW: Session report specific placeholders (from sessionReport object)
+    // ----------------------------
+    const sr = a.sessionReport || {};
+
+    // session name — fallback to activityName
+    const sessionName = sr.sessionName || sr.session_name || a.activityName || "";
+    html = html.replace(/{{sessionName}}/g, sessionName);
+
+    // coordinators may be array or string, fallback to a.coordinator if missing
+    let coordinators = "";
+    if (Array.isArray(sr.coordinators)) {
+      coordinators = sr.coordinators.join(", ");
+    } else {
+      coordinators = sr.coordinators || sr.coordinatorsText || a.coordinator || "";
+    }
+    html = html.replace(/{{coordinators}}/g, coordinators);
+
+    // google meet link (try multiple possible keys)
+    html = html.replace(/{{googleMeetLink}}/g, sr.googleMeetLink || sr.google_meet_link || sr.meetLink || "");
+
+    // intended participants (try multiple keys)
+    html = html.replace(/{{intendedParticipants}}/g, sr.intendedParticipants || sr.intended_participants || sr.intended || "");
+
+    // category of event (try multiple keys)
+    html = html.replace(/{{categoryOfEvent}}/g, sr.categoryOfEvent || sr.category_of_event || sr.category || "");
+
+    // date_display - prefer sessionReport.date then sessionDate then activity.date
+    const dateDisplay = sr.date || sr.sessionDate || sr.session_date || a.date || "";
+    html = html.replace(/{{date_display}}/g, dateDisplay);
+
+    // ensure session summary is filled (prefer sr.summary)
+    const summaryText = sr.summary || sr.details || a.sessionReport?.summary || a.summary || a.feedback || "";
+    html = html.replace(/{{sessionSummary}}/g, summaryText);
+
+    // ----------------------------
+    // Create PDF with Puppeteer
+    // ----------------------------
+   
+//  const browser = await puppeteer.launch({
+//   headless: "new",
+//   executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+//   args: [
+//     "--no-sandbox",
+//     "--disable-setuid-sandbox",
+//     "--disable-dev-shm-usage",
+//     "--disable-gpu",
+//   ],
 // });
 
-// html = html.replace(/{{attendancePages}}/g, attendancePagesHtml);
 
 
-// // =============================
-// // FEEDBACK PAGE (2 IMAGES PER PAGE)
-// // =============================
-// let feedbackPagesHtml = "";
-
-// const feedbackArr = Array.isArray(a.feedbackImages) ? a.feedbackImages : [];
-
-// for (let i = 0; i < feedbackArr.length; i += 2) {
-//   const img1 = toDataUrl(feedbackArr[i]);
-//   const img2 = feedbackArr[i + 1] ? toDataUrl(feedbackArr[i + 1]) : "";
-
-//   feedbackPagesHtml += `
-//     <div class="feedback-page">
-//       <div class="feedback-box">
-//         ${img1 ? `<img src="${img1}" />` : ""}
-//       </div>
-
-//       ${img2 ? `
-// <div class="feedback-box">
-//   <img src="${img2}" />
-// </div>
-// ` : ""}
-//     </div>
-//   `;
-// }
-
-// html = html.replace(/{{feedbackPages}}/g, feedbackPagesHtml);
-
-//   // ----------------------------
-//     // NEW: Session report specific placeholders (from sessionReport object)
-//     // ----------------------------
-//     const sr = a.sessionReport || {};
-
-//     // session name — fallback to activityName
-//     const sessionName = sr.sessionName || sr.session_name || a.activityName || "";
-//     html = html.replace(/{{sessionName}}/g, sessionName);
-
-//     // coordinators may be array or string, fallback to a.coordinator if missing
-//     let coordinators = "";
-//     if (Array.isArray(sr.coordinators)) {
-//       coordinators = sr.coordinators.join(", ");
-//     } else {
-//       coordinators = sr.coordinators || sr.coordinatorsText || a.coordinator || "";
-//     }
-//     html = html.replace(/{{coordinators}}/g, coordinators);
-
-//     // google meet link (try multiple possible keys)
-//     html = html.replace(/{{googleMeetLink}}/g, sr.googleMeetLink || sr.google_meet_link || sr.meetLink || "");
-
-//     // intended participants (try multiple keys)
-//     html = html.replace(/{{intendedParticipants}}/g, sr.intendedParticipants || sr.intended_participants || sr.intended || "");
-
-//     // category of event (try multiple keys)
-//     html = html.replace(/{{categoryOfEvent}}/g, sr.categoryOfEvent || sr.category_of_event || sr.category || "");
-
-//     // date_display - prefer sessionReport.date then sessionDate then activity.date
-//     const dateDisplay = sr.date || sr.sessionDate || sr.session_date || a.date || "";
-//     html = html.replace(/{{date_display}}/g, dateDisplay);
-
-//     // ensure session summary is filled (prefer sr.summary)
-//     const summaryText = sr.summary || sr.details || a.sessionReport?.summary || a.summary || a.feedback || "";
-//     html = html.replace(/{{sessionSummary}}/g, summaryText);
-
-//     // ----------------------------
-//     // Create PDF with Puppeteer
-//     // ----------------------------
-   
-// //  const browser = await puppeteer.launch({
-// //   headless: "new",
-// //   executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-// //   args: [
-// //     "--no-sandbox",
-// //     "--disable-setuid-sandbox",
-// //     "--disable-dev-shm-usage",
-// //     "--disable-gpu",
-// //   ],
-// // });
 
 // const browser = await puppeteer.launch({
 //   headless: true,
@@ -393,237 +398,75 @@ console.log("FEEDBACK FILES:", req.files?.feedbackImages);
 //   ]
 // });
 
-// const page = await browser.newPage();
+const page = await browser.newPage();
 
-// // ✅ Load HTML
-// // await page.setContent(html, {
-// //   waitUntil: "domcontentloaded",
-// // });
-
-
+// ✅ Load HTML
 // await page.setContent(html, {
-//   waitUntil: "networkidle0",
-//   timeout: 0
+//   waitUntil: "domcontentloaded",
 // });
 
+const browser = await puppeteer.launch({
+  args: chromium.args,
+  executablePath: await chromium.executablePath(),
+  headless: chromium.headless,
+});
 
-// // ✅ Apply CSS
-// await page.addStyleTag({ path: CSS_PATH });
-
-
-// // ✅ Generate PDF
-// const pdf = await page.pdf({
-//   format: "A4",
-//   printBackground: true,
-
-//   displayHeaderFooter: true,
-
-//   headerTemplate: `
-//     <div style="width:100%; text-align:center; margin-top:10px;">
-//       <img src="${toBase64(HEADER_PATH)}" style="width:90%; height:auto;" />
-//     </div>
-//   `,
-
-//   footerTemplate: `<div></div>`,
-
-//   margin: {
-//     top: "135px",
-//     bottom: "100px",
-//     left: "50px",
-//     right: "50px"
-//   }
-// });
+await page.setContent(html, {
+  waitUntil: "networkidle0",
+  timeout: 0
+});
 
 
-//     await browser.close();
-
-//    // ✅ Send response
-// res.setHeader(
-//   "Content-Disposition",
-//   `attachment; filename="${(a.activityName || "report").replace(/[^a-z0-9_\-\.]/gi, "_")}.pdf"`
-// );
-// res.setHeader("Content-Type", "application/pdf");
-
-// res.send(pdf);
-
-//   } catch (err) {
-//     console.log("PDF ERROR:", err);
-//     res.status(500).json({ message: "PDF failed", error: err.message });
-//   }
-// };
+// ✅ Apply CSS
+await page.addStyleTag({ path: CSS_PATH });
 
 
+// ✅ Generate PDF
+const pdf = await page.pdf({
+  format: "A4",
+  printBackground: true,
+
+  displayHeaderFooter: true,
+
+  headerTemplate: `
+    <div style="width:100%; text-align:center; margin-top:10px;">
+      <img src="${toBase64(HEADER_PATH)}" style="width:90%; height:auto;" />
+    </div>
+  `,
+
+  footerTemplate: `<div></div>`,
+
+  margin: {
+    top: "135px",
+    bottom: "100px",
+    left: "50px",
+    right: "50px"
+  }
+});
 
 
+    await browser.close();
 
+   // ✅ Send response
+res.setHeader(
+  "Content-Disposition",
+  `attachment; filename="${(a.activityName || "report").replace(/[^a-z0-9_\-\.]/gi, "_")}.pdf"`
+);
+res.setHeader("Content-Type", "application/pdf");
 
-export const getPdf = async (req, res) => {
-  try {
-    const a = await Activity.findById(req.params.id).lean();
-    if (!a) return res.status(404).json({ message: "Not found" });
-
-    const doc = new PDFDocument({ margin: 50 });
-
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${(a.activityName || "report").replace(/[^a-z0-9_\-\.]/gi, "_")}.pdf"`
-    );
-    res.setHeader("Content-Type", "application/pdf");
-
-    doc.pipe(res);
-
-    const purple = "#6e28a0";
-
-    // ======================
-    // COVER PAGE
-    // ======================
-    doc.fontSize(20).fillColor(purple).text("ACTIVITY REPORT", {
-      align: "center"
-    });
-
-    doc.moveDown(2);
-
-    doc.fontSize(14).fillColor("black");
-    doc.text(`Academic Year: ${a.academicYear || ""}`);
-    doc.text(`Activity Name: ${a.activityName || ""}`);
-    doc.text(`Coordinator: ${a.coordinator || ""}`);
-    doc.text(`Date: ${a.date || ""}`);
-    doc.text(`Duration: ${a.duration || ""}`);
-    doc.text(`PO & POs: ${a.poPos || ""}`);
-
-    doc.addPage();
-
-    // ======================
-    // TABLE OF CONTENTS
-    // ======================
-    doc.fontSize(18).fillColor(purple).text("TABLE OF CONTENTS", {
-      align: "center",
-      underline: true
-    });
-
-    doc.moveDown();
-
-    const contents = [
-      "Invitation",
-      "Poster",
-      "Resource Person Details",
-      "Session Report",
-      "Attendance",
-      "Photos",
-      "Feedback"
-    ];
-
-    contents.forEach((item, i) => {
-      doc.fontSize(12).fillColor("black")
-         .text(`${i + 1}.  ${item}`, { indent: 50 });
-    });
-
-    doc.addPage();
-
-    // ======================
-    // RESOURCE PERSON
-    // ======================
-    doc.fontSize(16).fillColor(purple).text("RESOURCE PERSON DETAILS", {
-      underline: true
-    });
-
-    doc.moveDown();
-
-    doc.fontSize(12).fillColor("black");
-    doc.text(`Name: ${a.resourcePerson?.name || ""}`);
-    doc.text(`Designation: ${a.resourcePerson?.designation || ""}`);
-    doc.text(`Institution: ${a.resourcePerson?.institution || ""}`);
-
-    // Image
-    if (a.resourcePerson?.photo) {
-      const full = path.join(UPLOADS_DIR, path.basename(a.resourcePerson.photo));
-      if (fs.existsSync(full)) {
-        doc.moveDown();
-        doc.image(full, { fit: [200, 150], align: "center" });
-      }
-    }
-
-    doc.addPage();
-
-    // ======================
-    // SESSION REPORT
-    // ======================
-    const sr = a.sessionReport || {};
-
-    doc.fontSize(16).fillColor(purple).text("SESSION REPORT", {
-      align: "center",
-      underline: true
-    });
-
-    doc.moveDown();
-
-    const row = (label, value) => {
-      doc.fontSize(12)
-        .fillColor("black")
-        .text(`${label}: `, { continued: true })
-        .font("Helvetica-Bold")
-        .text(value || "")
-        .font("Helvetica");
-    };
-
-    row("Session Name", sr.sessionName || a.activityName);
-    row("Resource Person", a.resourcePerson?.name);
-    row("Coordinators", (sr.coordinators || []).join(", "));
-    row("Participants", sr.participantsCount);
-    row("Faculty", sr.facultyCount);
-    row("Category", sr.categoryOfEvent);
-
-    doc.moveDown();
-
-    doc.fontSize(13).fillColor(purple).text("Summary", { underline: true });
-    doc.moveDown(0.5);
-
-    doc.fontSize(11).fillColor("black").text(sr.summary || "", {
-      align: "justify"
-    });
-
-    doc.addPage();
-
-    // ======================
-    // IMAGE HANDLER
-    // ======================
-    const addImage = (title, arr) => {
-      if (!arr || arr.length === 0) return;
-
-      doc.fontSize(16).fillColor(purple).text(title, { underline: true });
-      doc.moveDown();
-
-      arr.forEach((relPath) => {
-        const full = path.join(UPLOADS_DIR, path.basename(relPath));
-        if (fs.existsSync(full)) {
-          doc.image(full, {
-            fit: [450, 350],
-            align: "center"
-          });
-          doc.moveDown();
-        }
-      });
-
-      doc.addPage();
-    };
-
-    addImage("INVITATION", [a.invitation]);
-    addImage("POSTER", [a.poster]);
-    addImage("ATTENDANCE", a.attendanceImages);
-    addImage("PHOTOS", a.photos);
-    addImage("FEEDBACK", a.feedbackImages);
-
-    doc.end();
+res.send(pdf);
 
   } catch (err) {
     console.log("PDF ERROR:", err);
-    res.status(500).json({ message: "PDF failed" });
+    res.status(500).json({ message: "PDF failed", error: err.message });
   }
 };
 
 
 
-//docx approach
+
+
+
 export const getDocx = async (req, res) => {
   try {
     const a = await Activity.findById(req.params.id).lean();
