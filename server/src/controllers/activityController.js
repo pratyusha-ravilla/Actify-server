@@ -456,12 +456,13 @@ console.log("FEEDBACK FILES:", req.files?.feedbackImages);
 
 
 
+
 export const getPdf = async (req, res) => {
   try {
     const a = await Activity.findById(req.params.id).lean();
     if (!a) return res.status(404).json({ message: "Not found" });
 
-    const doc = new PDFDocument({ margin: 40 });
+    const doc = new PDFDocument({ margin: 50 });
 
     res.setHeader(
       "Content-Disposition",
@@ -471,59 +472,146 @@ export const getPdf = async (req, res) => {
 
     doc.pipe(res);
 
-    // HEADER
-    if (fs.existsSync(HEADER_PATH)) {
-      doc.image(HEADER_PATH, { fit: [500, 80], align: "center" });
-      doc.moveDown();
-    }
+    const purple = "#6e28a0";
 
-    // TITLE
-    const titleMap = {
-      conducted: "ACTIVITY CONDUCTED REPORT",
-      attended: "ACTIVITY ATTENDED REPORT",
-      expert_talk: "ACTIVITY EXPERT TALK"
-    };
+    // ======================
+    // COVER PAGE
+    // ======================
+    doc.fontSize(20).fillColor(purple).text("ACTIVITY REPORT", {
+      align: "center"
+    });
 
-    doc.fontSize(16).text(titleMap[a.reportType] || "", { align: "center" });
-    doc.moveDown();
+    doc.moveDown(2);
 
-    // BASIC DETAILS
-    doc.fontSize(12);
+    doc.fontSize(14).fillColor("black");
     doc.text(`Academic Year: ${a.academicYear || ""}`);
     doc.text(`Activity Name: ${a.activityName || ""}`);
     doc.text(`Coordinator: ${a.coordinator || ""}`);
     doc.text(`Date: ${a.date || ""}`);
     doc.text(`Duration: ${a.duration || ""}`);
     doc.text(`PO & POs: ${a.poPos || ""}`);
+
+    doc.addPage();
+
+    // ======================
+    // TABLE OF CONTENTS
+    // ======================
+    doc.fontSize(18).fillColor(purple).text("TABLE OF CONTENTS", {
+      align: "center",
+      underline: true
+    });
+
     doc.moveDown();
 
-    // RESOURCE
-    doc.fontSize(14).text("Resource Person", { underline: true });
-    doc.fontSize(12);
+    const contents = [
+      "Invitation",
+      "Poster",
+      "Resource Person Details",
+      "Session Report",
+      "Attendance",
+      "Photos",
+      "Feedback"
+    ];
+
+    contents.forEach((item, i) => {
+      doc.fontSize(12).fillColor("black")
+         .text(`${i + 1}.  ${item}`, { indent: 50 });
+    });
+
+    doc.addPage();
+
+    // ======================
+    // RESOURCE PERSON
+    // ======================
+    doc.fontSize(16).fillColor(purple).text("RESOURCE PERSON DETAILS", {
+      underline: true
+    });
+
+    doc.moveDown();
+
+    doc.fontSize(12).fillColor("black");
     doc.text(`Name: ${a.resourcePerson?.name || ""}`);
     doc.text(`Designation: ${a.resourcePerson?.designation || ""}`);
     doc.text(`Institution: ${a.resourcePerson?.institution || ""}`);
+
+    // Image
+    if (a.resourcePerson?.photo) {
+      const full = path.join(UPLOADS_DIR, path.basename(a.resourcePerson.photo));
+      if (fs.existsSync(full)) {
+        doc.moveDown();
+        doc.image(full, { fit: [200, 150], align: "center" });
+      }
+    }
+
+    doc.addPage();
+
+    // ======================
+    // SESSION REPORT
+    // ======================
+    const sr = a.sessionReport || {};
+
+    doc.fontSize(16).fillColor(purple).text("SESSION REPORT", {
+      align: "center",
+      underline: true
+    });
+
     doc.moveDown();
 
-    // SAFE IMAGE FUNCTION
-    const addImage = (relPath) => {
-      try {
-        if (!relPath) return;
-        const full = path.join(UPLOADS_DIR, path.basename(relPath));
-        if (!fs.existsSync(full)) return;
-
-        doc.addPage();
-        doc.image(full, { fit: [500, 400], align: "center" });
-      } catch (e) {
-        console.log("IMAGE ERROR:", e.message);
-      }
+    const row = (label, value) => {
+      doc.fontSize(12)
+        .fillColor("black")
+        .text(`${label}: `, { continued: true })
+        .font("Helvetica-Bold")
+        .text(value || "")
+        .font("Helvetica");
     };
 
-    addImage(a.invitation);
-    addImage(a.poster);
-    (a.photos || []).forEach(addImage);
-    (a.attendanceImages || []).forEach(addImage);
-    (a.feedbackImages || []).forEach(addImage);
+    row("Session Name", sr.sessionName || a.activityName);
+    row("Resource Person", a.resourcePerson?.name);
+    row("Coordinators", (sr.coordinators || []).join(", "));
+    row("Participants", sr.participantsCount);
+    row("Faculty", sr.facultyCount);
+    row("Category", sr.categoryOfEvent);
+
+    doc.moveDown();
+
+    doc.fontSize(13).fillColor(purple).text("Summary", { underline: true });
+    doc.moveDown(0.5);
+
+    doc.fontSize(11).fillColor("black").text(sr.summary || "", {
+      align: "justify"
+    });
+
+    doc.addPage();
+
+    // ======================
+    // IMAGE HANDLER
+    // ======================
+    const addImage = (title, arr) => {
+      if (!arr || arr.length === 0) return;
+
+      doc.fontSize(16).fillColor(purple).text(title, { underline: true });
+      doc.moveDown();
+
+      arr.forEach((relPath) => {
+        const full = path.join(UPLOADS_DIR, path.basename(relPath));
+        if (fs.existsSync(full)) {
+          doc.image(full, {
+            fit: [450, 350],
+            align: "center"
+          });
+          doc.moveDown();
+        }
+      });
+
+      doc.addPage();
+    };
+
+    addImage("INVITATION", [a.invitation]);
+    addImage("POSTER", [a.poster]);
+    addImage("ATTENDANCE", a.attendanceImages);
+    addImage("PHOTOS", a.photos);
+    addImage("FEEDBACK", a.feedbackImages);
 
     doc.end();
 
@@ -532,6 +620,8 @@ export const getPdf = async (req, res) => {
     res.status(500).json({ message: "PDF failed" });
   }
 };
+
+
 
 //docx approach
 export const getDocx = async (req, res) => {
