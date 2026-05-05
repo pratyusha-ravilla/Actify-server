@@ -366,25 +366,44 @@ html = html.replace(/{{feedbackPages}}/g, feedbackPagesHtml);
     // Create PDF with Puppeteer
     // ----------------------------
    
- const browser = await puppeteer.launch({
+//  const browser = await puppeteer.launch({
+//   headless: "new",
+//   executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+//   args: [
+//     "--no-sandbox",
+//     "--disable-setuid-sandbox",
+//     "--disable-dev-shm-usage",
+//     "--disable-gpu",
+//   ],
+// });
+
+
+const browser = await puppeteer.launch({
   headless: "new",
-  executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   args: [
     "--no-sandbox",
     "--disable-setuid-sandbox",
     "--disable-dev-shm-usage",
     "--disable-gpu",
-  ],
+    "--no-zygote",
+    "--single-process"
+  ]
 });
-
 
 
 const page = await browser.newPage();
 
 // ✅ Load HTML
+// await page.setContent(html, {
+//   waitUntil: "domcontentloaded",
+// });
+
+
 await page.setContent(html, {
-  waitUntil: "domcontentloaded",
+  waitUntil: "networkidle0",
+  timeout: 0
 });
+
 
 // ✅ Apply CSS
 await page.addStyleTag({ path: CSS_PATH });
