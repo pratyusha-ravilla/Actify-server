@@ -5,7 +5,7 @@ import fs from "fs";
 import path from "path";
 import Activity from "../models/Activity.js";
 import puppeteer from "puppeteer";
-import { install } from "@puppeteer/browsers";
+
 
 
 import { Document, Packer, Paragraph, ImageRun } from "docx";
@@ -379,26 +379,17 @@ html = html.replace(/{{feedbackPages}}/g, feedbackPagesHtml);
 //   ],
 // });
 
-const browser = await (async () => {
-  // Install Chrome dynamically if not present
-  const browserFetcher = await install({
-    browser: "chrome",
-    buildId: "121.0.6167.85",
-  });
-
-  return await puppeteer.launch({
-    headless: "new",
-    executablePath: browserFetcher.executablePath,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-gpu",
-      "--no-zygote",
-      "--single-process"
-    ]
-  });
-})();
+const browser = await puppeteer.launch({
+  headless: true,
+  args: [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-gpu",
+    "--no-zygote",
+    "--single-process"
+  ]
+});
 
 const page = await browser.newPage();
 
