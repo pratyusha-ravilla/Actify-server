@@ -453,7 +453,8 @@ console.log("FEEDBACK FILES:", req.files?.feedbackImages);
 // };
 
 
-import PDFDocument from "pdfkit";
+
+
 
 export const getPdf = async (req, res) => {
   try {
@@ -470,28 +471,23 @@ export const getPdf = async (req, res) => {
 
     doc.pipe(res);
 
-    // ===== HEADER =====
+    // HEADER
     if (fs.existsSync(HEADER_PATH)) {
-      doc.image(HEADER_PATH, {
-        fit: [500, 80],
-        align: "center"
-      });
+      doc.image(HEADER_PATH, { fit: [500, 80], align: "center" });
       doc.moveDown();
     }
 
-    // ===== TITLE =====
+    // TITLE
     const titleMap = {
       conducted: "ACTIVITY CONDUCTED REPORT",
       attended: "ACTIVITY ATTENDED REPORT",
       expert_talk: "ACTIVITY EXPERT TALK"
     };
 
-    doc.fontSize(16).text(titleMap[a.reportType] || "", {
-      align: "center"
-    });
+    doc.fontSize(16).text(titleMap[a.reportType] || "", { align: "center" });
     doc.moveDown();
 
-    // ===== BASIC DETAILS =====
+    // BASIC DETAILS
     doc.fontSize(12);
     doc.text(`Academic Year: ${a.academicYear || ""}`);
     doc.text(`Activity Name: ${a.activityName || ""}`);
@@ -501,7 +497,7 @@ export const getPdf = async (req, res) => {
     doc.text(`PO & POs: ${a.poPos || ""}`);
     doc.moveDown();
 
-    // ===== RESOURCE PERSON =====
+    // RESOURCE
     doc.fontSize(14).text("Resource Person", { underline: true });
     doc.fontSize(12);
     doc.text(`Name: ${a.resourcePerson?.name || ""}`);
@@ -509,47 +505,22 @@ export const getPdf = async (req, res) => {
     doc.text(`Institution: ${a.resourcePerson?.institution || ""}`);
     doc.moveDown();
 
-    if (a.resourcePerson?.photo) {
-      const full = path.join(UPLOADS_DIR, path.basename(a.resourcePerson.photo));
-      if (fs.existsSync(full)) {
-        doc.image(full, { fit: [200, 150], align: "center" });
-        doc.moveDown();
-      }
-    }
-
-    // ===== SESSION REPORT =====
-    const sr = a.sessionReport || {};
-
-    doc.fontSize(14).text("Session Report", { underline: true });
-    doc.fontSize(12);
-
-    doc.text(`Session Name: ${sr.sessionName || a.activityName || ""}`);
-    doc.text(`Participants: ${sr.participantsCount || 0}`);
-    doc.text(`Faculty: ${sr.facultyCount || 0}`);
-    doc.text(`Category: ${sr.categoryOfEvent || ""}`);
-    doc.moveDown();
-
-    doc.text("Summary:", { underline: true });
-    doc.text(sr.summary || "");
-    doc.moveDown();
-
-    // ===== IMAGE HELPER =====
+    // SAFE IMAGE FUNCTION
     const addImage = (relPath) => {
-      if (!relPath) return;
-      const full = path.join(UPLOADS_DIR, path.basename(relPath));
-      if (fs.existsSync(full)) {
+      try {
+        if (!relPath) return;
+        const full = path.join(UPLOADS_DIR, path.basename(relPath));
+        if (!fs.existsSync(full)) return;
+
         doc.addPage();
-        doc.image(full, {
-          fit: [500, 400],
-          align: "center"
-        });
+        doc.image(full, { fit: [500, 400], align: "center" });
+      } catch (e) {
+        console.log("IMAGE ERROR:", e.message);
       }
     };
 
-    // ===== IMAGES =====
     addImage(a.invitation);
     addImage(a.poster);
-
     (a.photos || []).forEach(addImage);
     (a.attendanceImages || []).forEach(addImage);
     (a.feedbackImages || []).forEach(addImage);
@@ -561,8 +532,6 @@ export const getPdf = async (req, res) => {
     res.status(500).json({ message: "PDF failed" });
   }
 };
-
-
 
 //docx approach
 export const getDocx = async (req, res) => {
